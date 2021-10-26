@@ -6,3 +6,8 @@ __pycache__/
 # Environment Files
 .DS_Store
 .env
+
+# Data Directories
+CompostMonitoringData/
+MoisturePlots/
+TemperaturePlots/
