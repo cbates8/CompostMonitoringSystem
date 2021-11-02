@@ -1,4 +1,5 @@
 import time
+import numpy as np
 from readSensors import ReadSensor
 
 class MoistureSensor(ReadSensor):
@@ -13,23 +14,23 @@ class MoistureSensor(ReadSensor):
 
         input("Hold the sensor in the air. Press 'Enter' to continue...")
 
-        for i in range(5):
+        for i in range(10):
             sCalibrateVals.insert(i, self.getVal())
             print("\tAdding Val: ", sCalibrateVals[i])
-            time.sleep(1)
+            time.sleep(0.5)
         
-        self.airVal = max(sCalibrateVals)
+        self.airVal = np.mean(sCalibrateVals)
 
         sCalibrateVals = []
 
         input("Submerge the sensor in water. Press 'Enter' to continue...")
 
-        for i in range(5):
+        for i in range(10):
             sCalibrateVals.insert(i, self.getVal())
             print("\tAdding Val: ", sCalibrateVals[i])
-            time.sleep(1)
+            time.sleep(0.5)
 
-        self.waterVal = min(sCalibrateVals)
+        self.waterVal = np.mean(sCalibrateVals)
 
         print("Air Value: ", self.airVal)
         print("Water Value: ", self.waterVal)
