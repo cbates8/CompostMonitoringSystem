@@ -34,7 +34,7 @@ class MoistureSensor(ReadSensor):
 
         print("Air Value: ", self.airVal)
         print("Water Value: ", self.waterVal)
-        print("\nDone calibrating")
+        print("\nDone calibrating\n")
 
     # Maps the raw input accordingly
     # ((input - min) * 100) / (max - min) --Casey
