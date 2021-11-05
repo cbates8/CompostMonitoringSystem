@@ -33,17 +33,21 @@ def main():
     
 
     # Calibrates the sensors in parallel.
-    p1 = Process(target=moisture_one.calibrate())
-    p1.start()
-    p2 = Process(target=moisture_two.calibrate())
-    p2.start()
-    p3 = Process(target=moisture_three.calibrate())
-    p3.start()
+    #p1 = Process(target=moisture_one.calibrate())
+    #p1.start()
+    #p2 = Process(target=moisture_two.calibrate())
+    #p2.start()
+    #p3 = Process(target=moisture_three.calibrate())
+    #p3.start()
 
-    p1.join()
-    p2.join()
-    p3.join()
+    #p1.join()
+    #p2.join()
+    #p3.join()
 
+    moisture_one.readCalibrationVals()
+    moisture_two.readCalibrationVals()
+    moisture_three.readCalibrationVals()
+    
     # Set day 1 used to see when a new day begins
     day1 = dt.now().strftime("%d")
     # Open first data collection file with appropriate date

@@ -1,4 +1,4 @@
-Sensor, AirVal, WaterVal
-Sensor 1, 42048, 41920
-Sensor 2, 43520, 43520
-Sensor 3, 512, 128
+Sensor,AirVal,WaterVal
+0,55718.4,29568.0
+1,55808.0,29632.0
+3,166.4,153.6
