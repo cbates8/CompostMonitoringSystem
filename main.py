@@ -10,12 +10,19 @@ import urllib3
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import notecard
+from periphery import I2C
 
 # Locally imported files.
 from moistureSensor import MoistureSensor
 from TemperatureSensor import TemperatureSensor
 
 def main():
+    # Declare notecard stuff
+    productUID = "com.gmail.cwbates8:ucce_compost_test"
+    port = I2C("/dev/i2c-1")
+    card = notecard.OpenI2C(port, 0, 0)
+    
     # Declare objects.
     moisture_one = MoistureSensor(MCP.P0)
     moisture_two = MoistureSensor(MCP.P1)
@@ -30,23 +37,20 @@ def main():
     moist2 = []
     moist3 = []
     timeS = []
-    
-
-    # Calibrates the sensors in parallel.
-    #p1 = Process(target=moisture_one.calibrate())
-    #p1.start()
-    #p2 = Process(target=moisture_two.calibrate())
-    #p2.start()
-    #p3 = Process(target=moisture_three.calibrate())
-    #p3.start()
-
-    #p1.join()
-    #p2.join()
-    #p3.join()
 
     moisture_one.readCalibrationVals()
     moisture_two.readCalibrationVals()
     moisture_three.readCalibrationVals()
+    
+    # Configure Notecard
+    req = {"req": "hub.set"}
+    req["product"] = productUID
+    req["mode"] = "continuous"
+    
+    print(f"Notecard config request: {json.dumps(req)}")
+    
+    rsp = card.Transaction(req)
+    print(f"Notecard config response: {rsp}")
     
     # Set day 1 used to see when a new day begins
     day1 = dt.now().strftime("%d")
