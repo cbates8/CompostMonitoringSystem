@@ -4,13 +4,15 @@ The system was built for our partners at the University of California Cooperativ
 and autonomize composting to the San Jose community.
 
 # Material List:
-  - Raspberry pi
+  - Raspberry Pi 4
   - micro sd
-  - type-c power cable
-  - usb
+  - USB type-c power cable
   - wires
+  - Temperature sensor (x3)
+  - Moisture sensor (x3)
   - MCP3008 chip
-  - LCD Screen
+  - Blues Wireless Notecard
+  - Pi Hat with an M.2 slot for the Notecard
 
 # Instructions:
   - Connect the pi according to the circuit diagram.
@@ -23,9 +25,9 @@ and autonomize composting to the San Jose community.
     - Configure nano to run python script
 
 # Main.py:
-  This file is responsible for data storage, sensor calibration, and lcd display. By default, the file is configured to
-  three moisture sensors, three temperature sensors, and the utilization of a 4x20 i2c LCD screen. The data is saved locally using pickleshare
-  and copied to a removable drive using shutil. Editting any of these factors should be done in this file.
+  This file is responsible for data collection and storage. By default, the file is configured to
+  three moisture sensors, three temperature sensors. The data is saved locally using pickleshare
+  and sent to the cloud using Notehub. Editting any of these factors should be done in this file.
   
 # moistureSensor.py
   This class is responsible for configuring the moisture sensor. The class extends ReadSensor and ensures the propper calibration of the sensors,
@@ -38,6 +40,9 @@ and autonomize composting to the San Jose community.
 # readSensors.py
   This file can be extended to most sensors that provide an analog output. The class is responsible for initializing the MCP3008 analog to digital converter,
   and provides two abstract functions for calibrating the sensors and mapping the values.
+
+# sensorCalibration.py
+  This file is responsible for correctly calibrating the moisture sensors. This script provides step-by-step instructions to the user to ensure accurate calibration of the sensors. Calibration results will be stored in `calibrationValues.csv` to be used to correctly map moisture sensor readings to a moisture percentage.
   
 # Necessary Libraries:
   - pickleshare
