@@ -19,7 +19,7 @@ p1.join()
 p2.join()
 p3.join()
 
-with open("calibrationValues.csv", "w") as ofile:
+with open("/home/pi/CompostMonitoringSystem/calibrationValues.csv", "w") as ofile:
 	ofile.write("Sensor, AirVal, WaterVal\n")
 	sensors = [moisture_one, moisture_two, moisture_three]
 	for s in sensors:
