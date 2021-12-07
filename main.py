@@ -105,44 +105,52 @@ def main():
         rsp = card.Transaction(req)
         print(f"Notecard response: {rsp}\n")
         
+        epoch = time.time() * 1000
+
         # Trigger route to send Temp1 data to Ubidots
-        req = {"req": "web.get"}
+        req = {"req": "web.post"}
         req["route"] = "Ubidots: Temp1"
+        req["body"] = {"value": temperature_one, "timestamp": epoch }
         rsp = card.Transaction(req)
         print(f"Sending Temp1 Data\nNotecard response: {rsp}\n")
         time.sleep(5)
 
         # Trigger route to send Temp2 data to Ubidots
-        req = {"req": "web.get"}
+        req = {"req": "web.post"}
         req["route"] = "Ubidots: Temp2"
+        req["body"] = {"value": temperature_two, "timestamp": epoch }
         rsp = card.Transaction(req)
         print(f"Sending Temp2 Data\nNotecard response: {rsp}\n")
         time.sleep(5)
         
         # Trigger route to send Temp3 data to Ubidots
-        req = {"req": "web.get"}
+        req = {"req": "web.post"}
         req["route"] = "Ubidots: Temp3"
+        req["body"] = {"value": temperature_three, "timestamp": epoch }
         rsp = card.Transaction(req)
         print(f"Sending Temp3 Data\nNotecard response: {rsp}\n")
         time.sleep(5)
         
         # Trigger route to send Moisture1 data to Ubidots
-        req = {"req": "web.get"}
+        req = {"req": "web.post"}
         req["route"] = "Ubidots: Moisture1"
+        req["body"] = {"value": current_M1_Val, "timestamp": epoch }
         rsp = card.Transaction(req)
         print(f"Sending Moisture1 Data\nNotecard response: {rsp}\n")
         time.sleep(5)
         
         # Trigger route to send Moisture2 data to Ubidots
-        req = {"req": "web.get"}
+        req = {"req": "web.post"}
         req["route"] = "Ubidots: Moisture2"
+        req["body"] = {"value": current_M2_Val, "timestamp": epoch }
         rsp = card.Transaction(req)
         print(f"Sending Moisture2 Data\nNotecard response: {rsp}\n")
         time.sleep(5)
 
         # Trigger route to send Moisture3 data to Ubidots
-        req = {"req": "web.get"}
+        req = {"req": "web.post"}
         req["route"] = "Ubidots: Moisture3"
+        req["body"] = {"value": current_M3_Val, "timestamp": epoch }
         rsp = card.Transaction(req)
         print(f"Sending Moisture3 Data\nNotecard response: {rsp}\n")
         
