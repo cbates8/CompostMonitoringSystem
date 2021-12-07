@@ -38,7 +38,7 @@ class MoistureSensor(ReadSensor):
 
     # Read air and water vals from file
     def readCalibrationVals(self):
-        with open("/home/pi/CompostMonitoringSystem/calibrationValues.csv", "r") as valFile:
+        with open("calibrationValues.csv", "r") as valFile:
             line = valFile.readline()
             for i in range(3):
                 #print(self.pinNum)
@@ -49,7 +49,7 @@ class MoistureSensor(ReadSensor):
                 if int(row[0]) == self.pinNum:
                     self.airVal = float(row[1])
                     self.waterVal = float(row[2])
-                    print(f"{self.pinNum}\t{self.airVal}\t{self.waterVal}")
+                    print(self.pinNum, self.airVal, self.waterVal)
                     break
                 
     # Maps the raw input accordingly
@@ -59,4 +59,4 @@ class MoistureSensor(ReadSensor):
         val = (val - self.waterVal)/(self.airVal - self.waterVal)
         val *= 100 # Turn into % --Casey
         val = 100 - val # What the heck is this for??? --Casey
-        return max(0, min(100, val))
+        return val

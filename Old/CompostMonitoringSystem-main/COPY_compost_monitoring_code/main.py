@@ -10,19 +10,12 @@ import urllib3
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-import notecard
-from periphery import I2C
 
 # Locally imported files.
 from moistureSensor import MoistureSensor
 from TemperatureSensor import TemperatureSensor
 
 def main():
-    # Declare notecard stuff
-    productUID = "com.gmail.ucce.bin.monitoring:compost_monitoring_system"
-    port = I2C("/dev/i2c-1")
-    card = notecard.OpenI2C(port, 0, 0)
-    
     # Declare objects.
     moisture_one = MoistureSensor(MCP.P0)
     moisture_two = MoistureSensor(MCP.P1)
@@ -37,28 +30,25 @@ def main():
     moist2 = []
     moist3 = []
     timeS = []
+    
 
-    # Read Calibration values from CSV to correctly map new readings
-    print(f"Sensor\tAirVal\tWaterVal")
-    moisture_one.readCalibrationVals()
-    moisture_two.readCalibrationVals()
-    moisture_three.readCalibrationVals()
-    
-    # Configure Notecard and confirm connection
-    req = {"req": "hub.set"}
-    req["product"] = productUID
-    req["mode"] = "continuous"
-    
-    print(f"\nNotecard config request: {json.dumps(req)}")
-    
-    rsp = card.Transaction(req)
-    print(f"Notecard config response: {rsp}\n")
-    
+    # Calibrates the sensors in parallel.
+    p1 = Process(target=moisture_one.calibrate())
+    p1.start()
+    p2 = Process(target=moisture_two.calibrate())
+    p2.start()
+    p3 = Process(target=moisture_three.calibrate())
+    p3.start()
+
+    p1.join()
+    p2.join()
+    p3.join()
+
     # Set day 1 used to see when a new day begins
     day1 = dt.now().strftime("%d")
     # Open first data collection file with appropriate date
     dt_string = dt.now().strftime("D%dM%mY%YH%HM%MS%S")
-    file = open("/home/pi/CompostMonitoringSystem/CompostMonitoringData/" + dt_string + ".txt", "w")
+    file = open("/home/pi/Desktop/CompostMonitoringSystem-main/compost_monitoring_code/CompostMonitoringData/" + dt_string + ".txt", "w")
 
     while (True):
         # Sets up the temperature variables.
@@ -94,50 +84,12 @@ def main():
 
         # Prints the current values.
         print("Current value", current_M1_Val, current_M2_Val, current_M3_Val, '\n\tCurrent Time:', dt_string)
-        print("Current Temps:\n\t" + str(temperature_one) + "\n\t" + str(temperature_two) + "\n\t" + str(temperature_three) + "\n")
+        print("Current Temps:\n\t" + str(temperature_one) + "\n\t" + str(temperature_two) + "\n\t" + str(temperature_three))
         
-        # Send values to the Notecard
-        req = {"req": "note.add"}
-        req["file"] = "sensors.qo"
-        req["sync"] = True
-        req["body"] = {"temp1": temperature_one, "temp2": temperature_two, "temp3": temperature_three, "moisture1": current_M1_Val, "moisture2": current_M2_Val, "moisture3": current_M3_Val}
-        #req["body"] = {"temp1": temperature_one}
-        #print(f"Notecard request: {json.dumps(req)}")
-    
-        rsp = card.Transaction(req)
-        print(f"Notecard response: {rsp}\n")
-        
-        #time.sleep(10)
-        
-        #req["body"] = {"temp2": temperature_two}
-        #rsp = card.Transaction(req)
-        #print(f"Notecard response: {rsp}\n")
-        #time.sleep(10)
-
-        #req["body"] = {"temp3": temperature_three}
-        #rsp = card.Transaction(req)
-        #print(f"Notecard response: {rsp}\n")
-        #time.sleep(10)
-        
-        #req["body"] = {"moisture1": current_M1_Val}
-        #rsp = card.Transaction(req)
-        #print(f"Notecard response: {rsp}\n")
-        #time.sleep(10)
-        
-        #req["body"] = {"moisture2": current_M2_Val}
-        #rsp = card.Transaction(req)
-        #print(f"Notecard response: {rsp}\n")
-        #time.sleep(10)
-        
-        #req["body"] = {"moisture3": current_M3_Val}
-        #rsp = card.Transaction(req)
-        #print(f"Notecard response: {rsp}\n")
-        
-        # Write collected data to text file then wait 30 minutes
+        # Write collected data to text file then wait 30 seconds
         str_dictionary = repr(curr_data)
         file.write(str_dictionary + "\n")
-        time.sleep(1800)
-        #time.sleep(30)
+        time.sleep(30)
         # Set day 2 to be used to see if the day has changed by comparing against day 1
         day2 = dt.now().strftime("%d")
         
@@ -145,7 +97,7 @@ def main():
         if day1 != day2:
             file.close()
             dt_string = dt.now().strftime("D%dM%mY%YH%HM%MS%S")
-            file = open("/home/pi/CompostMonitoringSystem/CompostMonitoringData/" + dt_string + ".txt", "w")
+            file = open("/home/pi/Desktop/CompostMonitoringSystem-main/compost_monitoring_code/CompostMonitoringData/" + dt_string + ".txt", "w")
             fig, ax = plt.subplots()
             ax.plot(timeS, temp1, label='temp 1')
             ax.plot(timeS, temp2, label='temp 2')
@@ -154,7 +106,7 @@ def main():
             ax.set_ylabel('temp, deg F')
             ax.set_title("Temperature vs. Time")
             ax.legend()
-            plt.savefig('/home/pi/CompostMonitoringSystem/TemperaturePlots/' + dt_string + '.png', bbox_inches='tight')
+            plt.savefig('/home/pi/Desktop/CompostMonitoringSystem-main/compost_monitoring_code/TemperaturePlots/' + dt_string + '.png', bbox_inches='tight')
             fig, ax = plt.subplots()
             ax.plot(timeS, moist1, label='moisture 1')
             ax.plot(timeS, moist2, label='moisture 2')
@@ -163,7 +115,7 @@ def main():
             ax.set_ylabel('moisture, ?')
             ax.set_title("Moisture vs. Time")
             ax.legend()
-            plt.savefig('/home/pi/CompostMonitoringSystem/MoisturePlots/' + dt_string + '.png', bbox_inches='tight')
+            plt.savefig('/home/pi/Desktop/CompostMonitoringSystem-main/compost_monitoring_code/MoisturePlots/' + dt_string + '.png', bbox_inches='tight')
             temp1 = []
             temp2 = []
             temp3 = []
