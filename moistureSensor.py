@@ -58,5 +58,5 @@ class MoistureSensor(ReadSensor):
         val = self.getVal()
         val = (val - self.waterVal)/(self.airVal - self.waterVal)
         val *= 100 # Turn into % --Casey
-        val = 100 - val # What the heck is this for??? --Casey
-        return max(0, min(100, val))
+        val = 100 - val
+        return max(0, min(100, val)) # Prevent returning values above 100% or below 0%
