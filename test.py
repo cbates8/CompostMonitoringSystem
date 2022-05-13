@@ -1,7 +1,8 @@
-import json
+import time
 
-x = '{ "name":"John", "age":30}'
-
-y = json.loads(x)
-
-print(y["name"])
+while(True):
+    try:
+        len(g)
+    except:
+        print("error\n")
+        time.sleep(3)

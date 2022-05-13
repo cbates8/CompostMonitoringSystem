@@ -28,8 +28,9 @@ def main():
     tempLowerThreshold = 40
     moistureUpperThreshold = 20
     moistureLowerThreshold = 80
-    thresholdFlags = [0,0,0,0,0,0] #i(0-2): temp1-3, i(3-5): moisture1-3
-    #1=out of threshold
+    thresholdFlags = [0,0,0,0,0,0] #i(0-2): temp1-3, i(3-5): moisture1-3. 1=out of threshold
+    waitTimeDefault = 1800 # set default report interval 
+    waitTime = waitTimeDefault # wait time that is actually used
     emails = ["scamacho@scu.edu"]
     moisture_one = MoistureSensor(MCP.P0)
     moisture_two = MoistureSensor(MCP.P1)
@@ -116,81 +117,84 @@ def main():
         # Prints the current values.
         print("Current value", current_M1_Val, current_M2_Val, current_M3_Val, '\n\tCurrent Time:', dt_string)
         print("Current Temps:\n\t" + str(temperature_one) + "\n\t" + str(temperature_two) + "\n\t" + str(temperature_three) + "\n")
+        try:
+            # Send values to the Notecard
+            req = {"req": "note.add"}
+            req["file"] = "sensors.qo"
+            req["sync"] = True
+            req["body"] = {"temp1": temperature_one, "temp2": temperature_two, "temp3": temperature_three, "moisture1": current_M1_Val, "moisture2": current_M2_Val, "moisture3": current_M3_Val}
         
-        # Send values to the Notecard
-        req = {"req": "note.add"}
-        req["file"] = "sensors.qo"
-        req["sync"] = True
-        req["body"] = {"temp1": temperature_one, "temp2": temperature_two, "temp3": temperature_three, "moisture1": current_M1_Val, "moisture2": current_M2_Val, "moisture3": current_M3_Val}
-    
-        rsp = card.Transaction(req)
-        print(f"Notecard response: {rsp}\n")
-        
-        epoch = time.time() * 1000
-
-        # Trigger route to send Temp1 data to Ubidots
-        req = {"req": "web.post"}
-        req["route"] = "Ubidots: Temp1"
-        req["body"] = {"value": temperature_one, "timestamp": epoch }
-        rsp = card.Transaction(req)
-        print(f"Sending Temp1 Data\nNotecard response: {rsp}\n")
-        time.sleep(5)
-
-        # Trigger route to send Temp2 data to Ubidots
-        req = {"req": "web.post"}
-        req["route"] = "Ubidots: Temp2"
-        req["body"] = {"value": temperature_two, "timestamp": epoch }
-        rsp = card.Transaction(req)
-        print(f"Sending Temp2 Data\nNotecard response: {rsp}\n")
-        time.sleep(5)
-        
-        # Trigger route to send Temp3 data to Ubidots
-        req = {"req": "web.post"}
-        req["route"] = "Ubidots: Temp3"
-        req["body"] = {"value": temperature_three, "timestamp": epoch }
-        rsp = card.Transaction(req)
-        print(f"Sending Temp3 Data\nNotecard response: {rsp}\n")
-        time.sleep(5)
-        
-        # Trigger route to send Moisture1 data to Ubidots
-        req = {"req": "web.post"}
-        req["route"] = "Ubidots: Moisture1"
-        req["body"] = {"value": current_M1_Val, "timestamp": epoch }
-        rsp = card.Transaction(req)
-        print(f"Sending Moisture1 Data\nNotecard response: {rsp}\n")
-        time.sleep(5)
-        
-        # Trigger route to send Moisture2 data to Ubidots
-        req = {"req": "web.post"}
-        req["route"] = "Ubidots: Moisture2"
-        req["body"] = {"value": current_M2_Val, "timestamp": epoch }
-        rsp = card.Transaction(req)
-        print(f"Sending Moisture2 Data\nNotecard response: {rsp}\n")
-        time.sleep(5)
-
-        # Trigger route to send Moisture3 data to Ubidots
-        req = {"req": "web.post"}
-        req["route"] = "Ubidots: Moisture3"
-        req["body"] = {"value": current_M3_Val, "timestamp": epoch }
-        rsp = card.Transaction(req)
-        print(f"Sending Moisture3 Data\nNotecard response: {rsp}\n")
-        
-        # Send email if values are out of threshold
-        if(thresholdFlags.count(1) > 0):
-            message = "test"
-            req = {"req": "web.get"}
-            req["route"] = "Time"
             rsp = card.Transaction(req)
-            print(f"Getting Time\nNotecard response: {rsp}\n")
-            netTime = (json.loads(rsp))["unixtime"]
-            message = message + str(epoch) + " " + str(netTime)
+            print(f"Notecard response: {rsp}\n")
             
-            for e in emails:  
-                req = {"req": "web.post"}
-                req["route"] = "Email"
-                req["body"] = {"personalizations": [{"to": [{"email": e}]}],"from": {"email": "ucce.bin.monitoring@gmail.com"},"subject": "Sensor values out of threshold","content": [{"type": "text/plain", "value": message}
+            epoch = time.time() * 1000
+
+            # Trigger route to send Temp1 data to Ubidots
+            req = {"req": "web.post"}
+            req["route"] = "Ubidots: Temp1"
+            req["body"] = {"value": temperature_one, "timestamp": epoch }
+            rsp = card.Transaction(req)
+            print(f"Sending Temp1 Data\nNotecard response: {rsp}\n")
+            time.sleep(5)
+
+            # Trigger route to send Temp2 data to Ubidots
+            req = {"req": "web.post"}
+            req["route"] = "Ubidots: Temp2"
+            req["body"] = {"value": temperature_two, "timestamp": epoch }
+            rsp = card.Transaction(req)
+            print(f"Sending Temp2 Data\nNotecard response: {rsp}\n")
+            time.sleep(5)
+            
+            # Trigger route to send Temp3 data to Ubidots
+            req = {"req": "web.post"}
+            req["route"] = "Ubidots: Temp3"
+            req["body"] = {"value": temperature_three, "timestamp": epoch }
+            rsp = card.Transaction(req)
+            print(f"Sending Temp3 Data\nNotecard response: {rsp}\n")
+            time.sleep(5)
+            
+            # Trigger route to send Moisture1 data to Ubidots
+            req = {"req": "web.post"}
+            req["route"] = "Ubidots: Moisture1"
+            req["body"] = {"value": current_M1_Val, "timestamp": epoch }
+            rsp = card.Transaction(req)
+            print(f"Sending Moisture1 Data\nNotecard response: {rsp}\n")
+            time.sleep(5)
+            
+            # Trigger route to send Moisture2 data to Ubidots
+            req = {"req": "web.post"}
+            req["route"] = "Ubidots: Moisture2"
+            req["body"] = {"value": current_M2_Val, "timestamp": epoch }
+            rsp = card.Transaction(req)
+            print(f"Sending Moisture2 Data\nNotecard response: {rsp}\n")
+            time.sleep(5)
+
+            # Trigger route to send Moisture3 data to Ubidots
+            req = {"req": "web.post"}
+            req["route"] = "Ubidots: Moisture3"
+            req["body"] = {"value": current_M3_Val, "timestamp": epoch }
+            rsp = card.Transaction(req)
+            print(f"Sending Moisture3 Data\nNotecard response: {rsp}\n")
+            
+            # Send email if values are out of threshold
+            if(thresholdFlags.count(1) > 0):
+                message = "test"
+                req = {"req": "web.get"}
+                req["route"] = "Time"
                 rsp = card.Transaction(req)
-                print(f"Sending Email\nNotecard response: {rsp}\n")
+                print(f"Getting Time\nNotecard response: {rsp}\n")
+                netTime = (json.loads(rsp))["unixtime"]
+                message = message + str(epoch) + " " + str(netTime)
+                
+                for e in emails:  
+                    req = {"req": "web.post"}
+                    req["route"] = "Email"
+                    req["body"] = {"personalizations": [{"to": [{"email": e}]}],"from": {"email": "ucce.bin.monitoring@gmail.com"},"subject": "Sensor values out of threshold","content": [{"type": "text/plain", "value": message}
+                    rsp = card.Transaction(req)
+                    print(f"Sending Email\nNotecard response: {rsp}\n")
+        except:
+            print("Connection failed. retrying in 5 minutes")
+            waitTime = 300 #5 minutes
 	]
 }
         
@@ -199,8 +203,8 @@ def main():
         # Write collected data to text file then wait 30 minutes
         str_dictionary = repr(curr_data)
         file.write(str_dictionary + "\n")
-        time.sleep(1800)
-        #time.sleep(30)
+        time.sleep(waitTime)
+        waitTime = waitTimeDefault # reset wait time back to default if it was changed
         # Set day 2 to be used to see if the day has changed by comparing against day 1
         day2 = dt.now().strftime("%d")
         
