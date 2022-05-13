@@ -24,6 +24,13 @@ def main():
     card = notecard.OpenI2C(port, 0, 0)
     
     # Declare objects.
+    tempUpperThreshold = 50
+    tempLowerThreshold = 40
+    moistureUpperThreshold = 20
+    moistureLowerThreshold = 80
+    thresholdFlags = [0,0,0,0,0,0] #i(0-2): temp1-3, i(3-5): moisture1-3
+    #1=out of threshold
+    emails = ["scamacho@scu.edu"]
     moisture_one = MoistureSensor(MCP.P0)
     moisture_two = MoistureSensor(MCP.P1)
     moisture_three = MoistureSensor(MCP.P3)
@@ -63,18 +70,32 @@ def main():
     while (True):
         # Sets up the temperature variables.
         # Records values to appropriate arrays to be used for plots
+        # Check if values are within threshold
         temperature_one = temp_one.read_temp()
         temp1.append(temperature_one)
+        if(tempUpperThreshold < temperature_one < tempLowerThreshold):
+            thresholdFlags[0] = 1
         temperature_two = temp_two.read_temp()
         temp2.append(temperature_two)
+        if(tempUpperThreshold < temperature_two < tempLowerThreshold):
+            thresholdFlags[1] = 1
         temperature_three = temp_three.read_temp()
         temp3.append(temperature_three)
+        if(tempUpperThreshold < temperature_three < tempLowerThreshold):
+            thresholdFlags[2] = 1
         current_M1_Val = moisture_one.mapSensorVals()
         moist1.append(current_M1_Val)
+        if(tempUpperThreshold < current_M1_Val < tempLowerThreshold):
+            thresholdFlags[3] = 1
         current_M2_Val = moisture_two.mapSensorVals()
         moist2.append(current_M2_Val)
+        if(tempUpperThreshold < current_M2_Val < tempLowerThreshold):
+            thresholdFlags[4] = 1
         current_M3_Val = moisture_three.mapSensorVals()
         moist3.append(current_M3_Val)
+        if(tempUpperThreshold < current_M1_Val < tempLowerThreshold):
+            thresholdFlags[5] = 1
+
         # Stores time in seconds when values were taken in array for plotting
         timeS.append(int(dt.now().strftime("%H"))*60*60+int(dt.now().strftime("%M"))*60+int(dt.now().strftime("%S")))
 
@@ -154,6 +175,27 @@ def main():
         rsp = card.Transaction(req)
         print(f"Sending Moisture3 Data\nNotecard response: {rsp}\n")
         
+        # Send email if values are out of threshold
+        if(thresholdFlags.count(1) > 0):
+            message = "test"
+            req = {"req": "web.get"}
+            req["route"] = "Time"
+            rsp = card.Transaction(req)
+            print(f"Getting Time\nNotecard response: {rsp}\n")
+            netTime = (json.loads(rsp))["unixtime"]
+            message = message + str(epoch) + " " + str(netTime)
+            
+            for e in emails:  
+                req = {"req": "web.post"}
+                req["route"] = "Email"
+                req["body"] = {"personalizations": [{"to": [{"email": e}]}],"from": {"email": "ucce.bin.monitoring@gmail.com"},"subject": "Sensor values out of threshold","content": [{"type": "text/plain", "value": message}
+                rsp = card.Transaction(req)
+                print(f"Sending Email\nNotecard response: {rsp}\n")
+	]
+}
+        
+        
+
         # Write collected data to text file then wait 30 minutes
         str_dictionary = repr(curr_data)
         file.write(str_dictionary + "\n")
@@ -162,6 +204,7 @@ def main():
         # Set day 2 to be used to see if the day has changed by comparing against day 1
         day2 = dt.now().strftime("%d")
         
+
         # If day has changed, open new data file, generate moisture and temperature plots, and reset arrays and day 1
         if day1 != day2:
             file.close()
@@ -193,5 +236,8 @@ def main():
             moist3 = []
             timeS = []
             day1 = dt.now().strftime("%d")
+        
+        for i in range(len(thresholdFlags)):
+            thresholdFlags[i] = 0
 
 main()
