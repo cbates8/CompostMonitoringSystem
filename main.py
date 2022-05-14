@@ -30,7 +30,7 @@ def main():
         try:
             req = {"req": "web.post"}
             req["route"] = "Ubidots: " + route
-            req["body"] = {"value": temperature_one, "timestamp": epoch }
+            req["body"] = {"value": value, "timestamp": epoch }
             rsp = card.Transaction(req)
             print(f"Sending Temp1 Data\nNotecard response: {rsp}\n")
             return True
@@ -47,8 +47,10 @@ def main():
             req = {"req": "web.post"}
             req["route"] = "Email"
             req["body"] = {"personalizations": [{"to": [{"email": e}]}],"from": {"email": "ucce.bin.monitoring@gmail.com"},"subject": subject,"content": [{"type": "text/plain", "value": message}]}
-            rsp = card.Transaction(req)
-            print(f"Sending Email\nNotecard response: {rsp}\n")
+            #rsp = card.Transaction(req)
+            print("Sending Email\n")
+            print("to: " + to + "\nsubject: " + subject + "\nmessage: " + message + "\n")
+            #print(f"Notecard response: {rsp}\n")
             return True
         except:
             return False
@@ -61,7 +63,7 @@ def main():
             req["route"] = "Time"
             rsp = card.Transaction(req)
             print(f"Getting Time\nNotecard response: {rsp}\n")
-            return (json.loads(rsp))["unixtime"]
+            return (json.loads(rsp)["unixtime"])
         except:
             return -1
         
@@ -72,8 +74,8 @@ def main():
     
     # Declare objects.
     tempUpperThreshold = 50
-    tempLowerThreshold = 40
-    moistureUpperThreshold = 20
+    tempLowerThreshold = 49
+    moistureUpperThreshold = 79
     moistureLowerThreshold = 80
     thresholdFlags = [0,0,0,0,0,0] #i(0-2): temp1-3, i(3-5): moisture1-3. 1=out of threshold
     waitTimeDefault = 1800 # set default report interval 
@@ -121,27 +123,27 @@ def main():
         # Check if values are within threshold
         temperature_one = temp_one.read_temp()
         temp1.append(temperature_one)
-        if(tempUpperThreshold < temperature_one < tempLowerThreshold):
+        if(not (tempUpperThreshold > temperature_one > tempLowerThreshold)):
             thresholdFlags[0] = 1
         temperature_two = temp_two.read_temp()
         temp2.append(temperature_two)
-        if(tempUpperThreshold < temperature_two < tempLowerThreshold):
+        if(not (tempUpperThreshold > temperature_two > tempLowerThreshold)):
             thresholdFlags[1] = 1
         temperature_three = temp_three.read_temp()
         temp3.append(temperature_three)
-        if(tempUpperThreshold < temperature_three < tempLowerThreshold):
+        if(not (tempUpperThreshold > temperature_three > tempLowerThreshold)):
             thresholdFlags[2] = 1
         current_M1_Val = moisture_one.mapSensorVals()
         moist1.append(current_M1_Val)
-        if(tempUpperThreshold < current_M1_Val < tempLowerThreshold):
+        if(not (tempUpperThreshold > current_M1_Val > tempLowerThreshold)):
             thresholdFlags[3] = 1
         current_M2_Val = moisture_two.mapSensorVals()
         moist2.append(current_M2_Val)
-        if(tempUpperThreshold < current_M2_Val < tempLowerThreshold):
+        if(not (tempUpperThreshold > current_M2_Val > tempLowerThreshold)):
             thresholdFlags[4] = 1
         current_M3_Val = moisture_three.mapSensorVals()
         moist3.append(current_M3_Val)
-        if(tempUpperThreshold < current_M1_Val < tempLowerThreshold):
+        if(not (tempUpperThreshold > current_M1_Val > tempLowerThreshold)):
             thresholdFlags[5] = 1
 
         # Stores time in seconds when values were taken in array for plotting
@@ -201,15 +203,15 @@ def main():
         time.sleep(5)
         # Send email if values are out of threshold
         if(thresholdFlags.count(1) > 0):
-            message = "test"
+            message = "Hi just want to make sure this works. sysTime: "
             netTime = getNetTime()
-            message = message + str(epoch) + " " + str(netTime)
-            
+            message = message + str(epoch) + " netTime: " + str(netTime)
+            #print(message + "\n")
             for e in emails:  
                 sendEmail("Sensor values out of threshold", message, e)
         # if error
-        print("Connection failed. retrying in 5 minutes")
-        waitTime = 300 #5 minutes
+        # print("Connection failed. retrying in 5 minutes")
+        # waitTime = 300 #5 minutes
 
         # Write collected data to text file then wait 30 minutes
         str_dictionary = repr(curr_data)
@@ -252,6 +254,7 @@ def main():
             timeS = []
             day1 = dt.now().strftime("%d")
         
+        # reset threshold flags
         for i in range(len(thresholdFlags)):
             thresholdFlags[i] = 0
 
