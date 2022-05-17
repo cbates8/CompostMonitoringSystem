@@ -1,6 +1,3 @@
-#TODO add check for email sent in last 24hrs
-# use net time for time stamps after confirming type
-
 # Import all the necessary libraries
 from time import *
 from datetime import datetime as dt
@@ -32,10 +29,12 @@ def main():
             req["route"] = "Ubidots: " + route
             req["body"] = {"value": value, "timestamp": epoch }
             rsp = card.Transaction(req)
-            print(f"Sending Temp1 Data\nNotecard response: {rsp}\n")
+            print("Sending " + route + f" Data\nNotecard response: {rsp}\n")
             return True
         except:
+            print("error sending " + route + " data. skipping\n")
             return False
+            
 
     # subject: string containing subject line
     # message: string containing message text
@@ -47,10 +46,10 @@ def main():
             req = {"req": "web.post"}
             req["route"] = "Email"
             req["body"] = {"personalizations": [{"to": [{"email": e}]}],"from": {"email": "ucce.bin.monitoring@gmail.com"},"subject": subject,"content": [{"type": "text/plain", "value": message}]}
-            #rsp = card.Transaction(req)
+            rsp = card.Transaction(req)
             print("Sending Email\n")
             print("to: " + to + "\nsubject: " + subject + "\nmessage: " + message + "\n")
-            #print(f"Notecard response: {rsp}\n")
+            print(f"Notecard response: {rsp}\n")
             return True
         except:
             return False
@@ -63,7 +62,7 @@ def main():
             req["route"] = "Time"
             rsp = card.Transaction(req)
             print(f"Getting Time\nNotecard response: {rsp}\n")
-            return (json.loads(rsp)["unixtime"])
+            return (rsp["body"])["unixtime"]
         except:
             return -1
         
@@ -73,14 +72,17 @@ def main():
     card = notecard.OpenI2C(port, 0, 0)
     
     # Declare objects.
+    emails = ["scamacho@scu.edu"]
     tempUpperThreshold = 50
     tempLowerThreshold = 49
     moistureUpperThreshold = 79
     moistureLowerThreshold = 80
+    #TODO get email and threshold values off a google sheet
+    
     thresholdFlags = [0,0,0,0,0,0] #i(0-2): temp1-3, i(3-5): moisture1-3. 1=out of threshold
     waitTimeDefault = 1800 # set default report interval 
-    waitTime = waitTimeDefault # wait time that is actually used
-    emails = ["scamacho@scu.edu"]
+    waitTime = waitTimeDefault
+    
     moisture_one = MoistureSensor(MCP.P0)
     moisture_two = MoistureSensor(MCP.P1)
     moisture_three = MoistureSensor(MCP.P3)
@@ -102,14 +104,19 @@ def main():
     moisture_three.readCalibrationVals()
     
     # Configure Notecard and confirm connection
-    req = {"req": "hub.set"}
-    req["product"] = productUID
-    req["mode"] = "continuous"
-    
-    print(f"\nNotecard config request: {json.dumps(req)}")
-    
-    rsp = card.Transaction(req)
-    print(f"Notecard config response: {rsp}\n")
+    connected = False
+    while(not connected):
+        try:
+            req = {"req": "hub.set"}
+            req["product"] = productUID
+            req["mode"] = "continuous"
+            print(f"\nNotecard config request: {json.dumps(req)}")
+            rsp = card.Transaction(req)
+            print(f"Notecard config response: {rsp}\n")
+            connected = True
+        except:
+            print("error connecting to internet. retrying in 1 minute\n")
+            time.sleep(60)
     
     # Set day 1 used to see when a new day begins
     day1 = dt.now().strftime("%d")
@@ -168,14 +175,21 @@ def main():
         print("Current Temps:\n\t" + str(temperature_one) + "\n\t" + str(temperature_two) + "\n\t" + str(temperature_three) + "\n")
         
         # Send values to the Notecard
-        req = {"req": "note.add"}
-        req["file"] = "sensors.qo"
-        req["sync"] = True
-        req["body"] = {"temp1": temperature_one, "temp2": temperature_two, "temp3": temperature_three, "moisture1": current_M1_Val, "moisture2": current_M2_Val, "moisture3": current_M3_Val}
-    
-        rsp = card.Transaction(req)
-        print(f"Notecard response: {rsp}\n")
+        noteSent = False
+        while(not noteSent):
+            try:
+                req = {"req": "note.add"}
+                req["file"] = "sensors.qo"
+                req["sync"] = True
+                req["body"] = {"temp1": temperature_one, "temp2": temperature_two, "temp3": temperature_three, "moisture1": current_M1_Val, "moisture2": current_M2_Val, "moisture3": current_M3_Val}
+                rsp = card.Transaction(req)
+                print(f"Notecard response: {rsp}\n")
+                noteSent = True
+            except:
+                print("error note not sent. retrying in 1 minute\n")
+                time.sleep(60)
         
+        #TODO use internet time instead of local time
         epoch = time.time() * 1000
 
         # Trigger route to send Temp1 data to Ubidots
@@ -203,12 +217,13 @@ def main():
         time.sleep(5)
         # Send email if values are out of threshold
         if(thresholdFlags.count(1) > 0):
-            message = "Hi just want to make sure this works. sysTime: "
+            message = "Hi sending a different message so i dont get thrown in the bad place. sysTime: "
+            #TODO generate message based on sensor values
             netTime = getNetTime()
             message = message + str(epoch) + " netTime: " + str(netTime)
-            #print(message + "\n")
-            for e in emails:  
-                sendEmail("Sensor values out of threshold", message, e)
+            #for e in emails:  
+            #    sendEmail("Sensor values out of threshold", message, e)
+            #TODO make sure email are sent out no more than once every 24 hrs
         # if error
         # print("Connection failed. retrying in 5 minutes")
         # waitTime = 300 #5 minutes
